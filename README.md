@@ -1,2 +1,3 @@
 # ShipShooter
-A Vertically scrolling shooter
+A Vertically scrolling shooter.
+This is the Readme file.
