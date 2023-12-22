@@ -137,8 +137,8 @@ while running:
 
     if game_state == state_start_screen:
         draw_stars()
-        draw_text("Space conqueror", text_font, (255,255,255), 100, 100)
-        draw_text("Any key to start", text_font, (255,255,255), 100, 200)
+        draw_text("Space conqueror", text_font, (255,255,255), 155, 100)
+        draw_text("Any key to start", text_font, (255,255,255), 150, 200)
         if keypressed:
             keypressed = False
             game_state = state_game
