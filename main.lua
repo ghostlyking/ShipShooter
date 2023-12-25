@@ -22,7 +22,6 @@ function Player.new(_x,_y, _img)
 end
 
 function Player.draw(self)
-
     love.graphics.draw(self.img, self.x, self.y)
 end
 
@@ -97,11 +96,12 @@ end
  #     #   #   #    # #   #  #    # 
   #####    #   #    # #    #  #### 
 --]]
-local Stars = {}
-Stars.__index = Stars
+local Star = {}
+Star.__index = Star
+stars = {}
 
-function Stars.new(_x,_y, _size)
-    local self = setmetatable({}, Stars)
+function Star.new(_x,_y, _size)
+    local self = setmetatable({}, Star)
 
     self.x = _x
     self.y = _y
@@ -110,18 +110,18 @@ function Stars.new(_x,_y, _size)
     return self
 end
 
-function Stars.draw(self)
+function Star.draw(self)
     love.graphics.setColor(255,255,255)
     love.graphics.rectangle("fill", self.x - self.size/2,self.y - self.size/2, self.size,self.size)
 end
 
-function Stars.setPosition(self, _x, _y)
-    if _x > (love.graphics.getWidth() - self.img:getWidth()) then
-        _x = love.graphics.getWidth() - self.img:getWidth()
-    end
-
+function Star.setPosition(self, _x, _y)
     self.x = _x
     self.y = _y
+end
+
+function Star.update(self)
+    self:setPosition(self.x, self.y + self.size/2.0)
 end
 
 --[[
@@ -202,6 +202,7 @@ function love.load(args)
     love.mouse.setVisible(false)
 
     player = Player.new(20,love.graphics.getHeight() - ship:getHeight(),ship)
+
     alien = Alien.new(100,0,alien1)
 end
 
@@ -231,6 +232,18 @@ function love.update()
     
     alien:update()
 
+    -- Missile updates
+    s = Star.new(math.random(0,love.graphics.getWidth()), 0, math.random(1,3))
+    table.insert(stars,s)
+
+    for key,s in ipairs(stars) do
+        if (s.y > love.graphics.getHeight()) then
+            table.remove(stars, key)
+        end
+        s:update()
+    end
+
+
     -- Handle missiles
     for key,m in ipairs(missiles) do
 
@@ -250,6 +263,11 @@ function love.update()
 end
 
 function love.draw()
+    -- Draw stars
+    for key,s in ipairs(stars) do
+        s:draw()
+    end
+
     -- Draw the player
     player:draw()
 
