@@ -27,7 +27,8 @@ alien = pygame.image.load('images/BadShip.png')
 alien = pygame.transform.flip(alien, False,True)
 
 running = True
-
+print(pygame.version.ver)
+print(pygame.display.get_driver())
 score = 0
 
 shipX = 250
