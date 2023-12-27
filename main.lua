@@ -1,5 +1,46 @@
 
 -- Objects
+local Animation = {}
+Animation.__index = Animation
+
+function Animation.new(_x,_y, _img)
+    local self = setmetatable({}, Animation)
+
+    self.x = _x
+    self.y = _y
+    self.frame = 0
+    self.frames = {}
+    return self
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 --[[
     ######                                    
     #     # #        ##   #   # ###### #####  
@@ -143,6 +184,14 @@ function Missile.new(_x,_y, _img)
     self.x = _x
     self.y = _y
     self.img = _img
+    if (math.random(1,2) == 2) then
+        self.speedX = -1.5
+    else
+        self.speedX = 1.5
+    end
+
+    self.speedY = 0.8
+
 
     return self
 end
@@ -162,10 +211,15 @@ end
 
 
 function Missile.update(self)
-    self:setPosition(self.x, self.y-1)
     if (self.y<0-self.img:getHeight()) then
         return false
     end
+    self:setPosition(self.x + self.speedX, self.y+self.speedY)
+
+    self.speedY = self.speedY - 0.09
+
+    self.speedX = self.speedX + (0 - (self.speedX / 10))
+
     return true
 end
 
@@ -215,7 +269,7 @@ function love.keypressed( key, scancode, isrepeat )
     end
  end
 
- function collission(thingA, thingB)
+ function collision(thingA, thingB)
     x1,y1,r1 = thingA:getCentroid()
     x2,y2,r2 = thingB:getCentroid()
 
@@ -248,7 +302,7 @@ function love.update()
     for key,m in ipairs(missiles) do
 
         -- Check if the missile hit an alien
-        if (collission(alien, m)) then
+        if (collision(alien, m)) then
             score = score + 100
             table.remove(missiles, key)
             alien:reset()
