@@ -1,48 +1,59 @@
+local fCount = 0
 
 -- Objects
 local Animation = {}
 Animation.__index = Animation
+animations = {}
 
-function Animation.new(_x,_y, _img)
+function Animation.new(_x,_y, _xs, _ys, _xc, _yc,  _count, _img)
     local self = setmetatable({}, Animation)
 
     self.x = _x
     self.y = _y
+    self.xw = _xs
+    self.yh = _ys  
+    self.count = _count
     self.frame = 0
     self.frames = {}
+    self.img = _img
+
+    local counter = 0
+    for fy=0, _yc-1, 1 do
+        for fx=0, _xc-1, 1 do
+            if counter == _count then
+                goto AnimationNewExit
+            end
+            counter = counter + 1
+            local f = love.graphics.newQuad(fx*_xs, fy*_ys, _xs, _ys, _img)
+            table.insert(self.frames, f)
+        end
+    end
+    
+    ::AnimationNewExit::
+
     return self
 end
 
+function Animation.draw(self)
+    love.graphics.draw(self.img, self.frames[self.frame%self.count+1], self.x, self.y, 0,0.3,0.3)
+    self.frame = self.frame + 1
+end
 
+function Animation.done(self)
+    if (self.frame >= self.count) then
+        return true
+    end
+    return false
+end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+function Animation.setPosition(self, _x, _y)
+    self.x = _x
+    self.y = _y
+end
 
 
 --[[
-    ######                                    
+    ######                                        
     #     # #        ##   #   # ###### #####  
     #     # #       #  #   # #  #      #    # 
     ######  #      #    #   #   #####  #    # 
@@ -73,6 +84,9 @@ function Player.setPosition(self, _x, _y)
 
     self.x = _x
     self.y = _y
+end
+function Player.getCentroid(self)
+    return self.x + self.img:getWidth()/2 +10 , self.y , 16
 end
 
 --[[
@@ -125,7 +139,7 @@ function Alien.reset(self)
 end
 
 function Alien.getCentroid(self)
-    return self.x + self.img:getWidth()/2 , self.y - self.img:getHeight()/2, 16
+    return self.x + self.img:getWidth()/2 , self.y - self.img:getHeight()/2, 28
 end
 
 --[[
@@ -185,9 +199,9 @@ function Missile.new(_x,_y, _img)
     self.y = _y
     self.img = _img
     if (math.random(1,2) == 2) then
-        self.speedX = -1.5
+        self.speedX = -3
     else
-        self.speedX = 1.5
+        self.speedX = 3
     end
 
     self.speedY = 0.8
@@ -227,6 +241,53 @@ function Missile.getCentroid(self)
     return self.x + self.img:getWidth()/2 , self.y + self.img:getHeight()/2, 8
 end
 
+--[[
+########  ##     ## ##       ##       ######## ######## 
+##     ## ##     ## ##       ##       ##          ##    
+##     ## ##     ## ##       ##       ##          ##    
+########  ##     ## ##       ##       ######      ##    
+##     ## ##     ## ##       ##       ##          ##    
+##     ## ##     ## ##       ##       ##          ##    
+########   #######  ######## ######## ########    ##    
+--]]
+local Bullet = {}
+Bullet.__index = Bullet
+bullets = {}
+
+function Bullet.new(_x,_y, _img)
+    local self = setmetatable({}, Bullet)
+
+    self.x = _x
+    self.y = _y
+    self.img = _img
+    self.speedX = 0
+    self.speedY = -2
+ 
+    return self
+end
+
+function Bullet.draw(self)
+    love.graphics.draw(self.img, self.x + math.sin(self.y  )*10, self.y, 1.6, 0.25, 0.25)
+end
+
+function Bullet.setPosition(self, _x, _y)
+    self.x = _x
+    self.y = _y
+end
+
+
+function Bullet.update(self)
+    if (self.y<0-self.img:getHeight()) then
+        return false
+    end
+
+    self:setPosition(self.x + self.speedX, self.y+self.speedY)
+    return true
+end
+
+function Bullet.getCentroid(self)
+    return self.x + 8 , self.y + 5, 8
+end
 
 --[[
     #     #                 
@@ -252,14 +313,18 @@ function love.load(args)
     ship = love.graphics.newImage("images/GoodShip.png")
     missile = love.graphics.newImage("images/Missile.png")
     alien1 = love.graphics.newImage("images/BadShip.png")
+    explosionImg = love.graphics.newImage("images/Explosion1.png")
+    Bullet_purple = love.graphics.newImage("images/Bullet.png")
 
     love.mouse.setVisible(false)
 
     player = Player.new(20,love.graphics.getHeight() - ship:getHeight(),ship)
 
     alien = Alien.new(100,0,alien1)
+
 end
 
+--[[
 function love.keypressed( key, scancode, isrepeat )
     local dx, dy = 0, 0
 
@@ -268,6 +333,7 @@ function love.keypressed( key, scancode, isrepeat )
        table.insert(missiles, m)
     end
  end
+--]]
 
  function collision(thingA, thingB)
     x1,y1,r1 = thingA:getCentroid()
@@ -282,7 +348,8 @@ function love.keypressed( key, scancode, isrepeat )
  
 
 function love.update()
-    player:setPosition(love.mouse.getX(), player.y)
+    fCount = fCount + 1
+    player:setPosition(love.mouse.getX(), player.y) 
     
     alien:update()
 
@@ -305,7 +372,11 @@ function love.update()
         if (collision(alien, m)) then
             score = score + 100
             table.remove(missiles, key)
+            local e = Animation.new(alien.x - 16, alien.y - 64, 355, 360, 9,7,45,explosionImg)
+
             alien:reset()
+            table.insert(animations, e)
+
         end
 
         local dead = m:update()
@@ -314,6 +385,40 @@ function love.update()
             table.remove(missiles, key)
         end
     end
+
+    -- Handle bullets
+    for key,b in ipairs(bullets) do
+
+        -- Check if the missile hit an alien
+        if (collision(alien, b)) then
+            score = score + 100
+            table.remove(bullets, key)
+            local e = Animation.new(alien.x - 16, alien.y - 64, 355, 360, 9,7,45,explosionImg)
+
+            alien:reset()
+            table.insert(animations, e)
+        end
+
+        local dead = b:update()
+        if (dead == false) then
+            -- Remove missiles that flew off the top
+            table.remove(bullets, key)
+        end
+    end
+
+    if love.keyboard.isDown("space") then
+        if (fCount % 60 == 0) then
+            m = Missile.new(player.x,player.y,missile)
+            table.insert(missiles, m)
+        else if (fCount % 10 == 0) then
+            local cx
+            local cy
+            cx, cy = player:getCentroid()
+            b = Bullet.new(cx,cy,Bullet_purple)
+            table.insert(bullets, b)
+        end end
+    end
+
 end
 
 function love.draw()
@@ -329,9 +434,20 @@ function love.draw()
     for key,m in ipairs(missiles) do
         m:draw()
     end
+    for key,b in ipairs(bullets) do
+        b:draw()
+    end
 
     -- draw the alien
     alien:draw()
+
+    -- handle animations
+    for key,a in ipairs(animations) do
+        a:draw()
+        if a:done() then
+            table.remove(animations, key)
+        end
+    end
 
     love.graphics.print(score, 0, 0)
 
